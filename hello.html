@@ -1,34 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: "Inconsolata", monospace;
-            background: #fff;
-            color: #000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-    </style>
-</head>
-<body>
-        <div class="links">
-        <a href="https://example.com">Example Link 1</a>
-        <a href="https://example.org">Example Link 2</a>
-        <a href="https://example.net">Example Link 3</a>
-        <a href="https://github.com">GitHub</a>
-        <a href="https://twitter.com">Twitter</a>
-    </div>
-    <h1>Hello Page</h1>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-    <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-</body>
-</html>
+---
+layout: default
+title: Not Linktree
+---
+
+<nav>
+  <a href="{{ '/' | relative_url }}">Home</a> |
+  <a href="{{ '/hello.html' | relative_url }}">Not-Linktree</a>
+</nav>
+
+<div class="links">
+  <a href="https://example.com">Example Link 1</a>
+  <a href="https://example.org">Example Link 2</a>
+  <a href="https://example.net">Example Link 3</a>
+  <a href="https://github.com">GitHub</a>
+  <a href="https://twitter.com">Twitter</a>
+</div>
+
+<div class="posts-wrapper">
+  <h2>Posts</h2>
+  <ul class="timeline">
+  {% for post in site.posts %}
+    <li>
+      <a href="{{ post.url }}">{{ post.title }}</a>
+      <span>{{ post.date | date: "%B %d, %Y" }}</span>
+    </li>
+  {% endfor %}
+  </ul>
+</div>
