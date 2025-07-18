@@ -1,7 +1,7 @@
 body {
-  background: #fafafa;
-  color: #222;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-family: "Consolas", "Courier New", monospace;
   line-height: 1.6;
   margin: 0;
   padding: 0;
@@ -59,6 +59,11 @@ th, td {
 th {
   background-color: #f0f0f0;
   font-weight: bold;
+}
+
+b,
+strong {
+  color: #cccccc;
 }
 
 tr:nth-child(even) {
