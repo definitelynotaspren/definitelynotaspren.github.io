@@ -41,6 +41,9 @@ main {
 }
 table {
   width: 100%;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
   border-collapse: collapse;
   margin: 1em 0;
   font-size: 0.95em;
