@@ -57,7 +57,7 @@ th, td {
 }
 
 th {
-  background-color: #f0f0f0;
+  background-color: #15141a;
   font-weight: bold;
 }
 
@@ -67,7 +67,7 @@ strong {
 }
 
 tr:nth-child(even) {
-  background-color: #fafafa;
+  background-color: #333333;
 }
 
 table thead {
