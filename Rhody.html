@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhododendron Property Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #ecf0f1;
+            font-size: 14px;
+        }
+
+        .map-wrapper {
+            position: relative;
+            width: 100%;
+            height: 800px;
+            overflow: hidden;
+            background: #e8e8e8;
+        }
+
+        .svg-container {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        .svg-container:active {
+            cursor: grabbing;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Make clickable elements interactive */
+        .clickable {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .clickable:hover {
+            opacity: 0.7;
+        }
+
+        /* Popup styles */
+        .popup {
+            position: absolute;
+            background: white;
+            border: 2px solid #2c3e50;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 250px;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+
+        .popup.active {
+            display: block;
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .popup-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+
+        .popup-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7f8c8d;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .popup-close:hover {
+            color: #2c3e50;
+        }
+
+        .popup-content {
+            color: #555;
+            font-size: 14px;
+        }
+
+        .popup-field {
+            margin-bottom: 10px;
+        }
+
+        .popup-field label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 3px;
+            color: #2c3e50;
+        }
+
+        .popup-field input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .popup-field input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .status-occupied {
+            background: #9CB1C5;
+            color: white;
+        }
+
+        .status-partial {
+            background: #B87B31;
+            color: white;
+        }
+
+        .status-condemned {
+            background: #792120;
+            color: white;
+        }
+
+        .status-rented {
+            background: #AA9E9E;
+            color: white;
+        }
+
+        .status-old-building {
+            background: #C08B8B;
+            color: #333;
+        }
+
+        .status-easement {
+            background: #A6B0A2;
+            color: white;
+        }
+
+        .status-healthy {
+            background: #497B5B;
+            color: white;
+        }
+
+        .status-hazard {
+            background: #A50500;
+            color: white;
+        }
+
+        .status-flora {
+            background: #CEABDF;
+            color: #333;
+        }
+
+        .legend {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #ddd;
+        }
+
+        .legend h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+
+        .legend-label {
+            font-size: 13px;
+            color: #555;
+        }
+
+        .controls {
+            padding: 15px 20px;
+            background: #ecf0f1;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .control-btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Rhododendron Property Map</h1>
+            <p>Click on buildings, trees, and property features for more information</p>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="resetView()">Reset View</button>
+            <button class="control-btn" onclick="zoomIn()">Zoom In</button>
+            <button class="control-btn" onclick="zoomOut()">Zoom Out</button>
+        </div>
+
+        <div class="map-wrapper" id="mapWrapper">
+            <div class="svg-container" id="svgContainer">
+                <svg width="100%" height="100%" viewBox="0 0 5100 3300" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+                    <rect id="Rhododendron" x="-99.07" y="0" width="5291.768" height="3510.899" style="fill:rgb(117,127,121);stroke:black;stroke-width:7.5px;"/>
+                    
+                    <!-- Motel Rooms 10-17 -->
+                    <g class="clickable" data-type="building" data-name="Motel Rooms 10-17" data-status="partial" transform="matrix(0.723793,-1.154381,1.154381,0.723793,-1331.502721,2844.524006)">
+                        <path d="M3034.046,2468.485L3141.03,2398.25L3464.65,2920.137L3372.434,2990.577L3034.046,2468.485Z" style="fill:rgb(184,123,49);stroke:black;stroke-width:5.5px;"/>
+                    </g>
+                    
+                    <!-- Cabin 5 -->
+                    <g class="clickable" data-type="building" data-name="Cabin 5" data-status="condemned" transform="matrix(0.461449,-0.023798,0.020693,0.401246,2484.184384,1223.154109)">
+                        <path d="M3829.918,586.521L4351.497,603.217C4351.497,603.217 4325.578,1291.808 4327.898,1310.577C4292.089,1314.512 3823.546,1294.375 3823.546,1294.375L3829.918,586.521Z" style="fill:rgb(156,177,197);stroke:black;stroke-width:17.32px;"/>
+                    </g>
+                    
+                    <!-- Cabin 4 -->
+                    <g class="clickable" data-type="building" data-name="Cabin 4" data-status="occupied" transform="matrix(0.411583,0.014041,-0.011881,0.348256,2211.843627,1057.004947)">
+                        <path d="M3829.918,586.521L4351.497,603.217C4351.497,603.217 4325.578,1291.808 4327.898,1310.577C4292.089,1314.512 3823.546,1294.375 3823.546,1294.375L3829.918,586.521Z" style="fill:rgb(156,177,197);stroke:black;stroke-width:19.66px;"/>
+                    </g>
+                    
+                    <!-- Duplex Cabins 2 & 3 -->
+                    <g class="clickable" data-type="building" data-name="Cabins 2 & 3 (Duplex)" data-status="occupied" transform="matrix(0.672849,0.132335,-0.053631,0.272682,771.895672,559.56813)">
+                        <path d="M3829.918,586.521L4351.497,603.217C4351.497,603.217 4325.578,1291.808 4327.898,1310.577C4292.089,1314.512 3823.546,1294.375 3823.546,1294.375L3829.918,586.521Z" style="fill:rgb(156,177,197);stroke:black;stroke-width:14.33px;"/>
+                    </g>
+                    
+                    <!-- Rented Lot and Gas Station (combined) -->
+                    <g class="clickable" data-type="property" data-name="Rented Lot & Gas Station/Shop" data-status="rented" transform="matrix(0.723793,-1.154381,1.154381,0.723793,-1331.502721,2844.524006)">
+                        <path d="M1618.504,461.97C1626.173,461.97 1822.118,427.134 1930.14,481.146C2034.865,533.509 2752.191,1871.448 2752.191,1871.448L2326.58,1968.857L1964.524,2075.315C1964.524,2075.315 1899.383,2064.847 1859.93,1946.495C1838.096,1880.996 1860.199,1848.468 1791.542,1711.158C1747.518,1623.113 1645.356,1353.502 1636.662,1240.485C1629.44,1146.594 1584.289,940.926 1664.822,779.87C1690.977,727.563 1779.898,641.507 1753.325,614.933C1748.313,609.921 1637.274,490.558 1640.175,481.855L1618.504,461.97Z" style="fill:rgb(170,158,158);stroke:black;stroke-width:14.98px;"/>
+                    </g>
+                    
+                    <!-- Non-Buildable/Borders River -->
+                    <g class="clickable" data-type="property" data-name="Non-Buildable/Borders River" data-status="easement" transform="matrix(0.723793,-1.154381,1.154381,0.723793,-1331.502721,2844.524006)">
+                        <path d="M1192.13,32.679C1192.13,32.679 1218.727,378.605 1201.573,563.807C1150.112,1119.412 1016.55,1421.004 1133.357,1885.714C1176.68,2058.073 1373.947,2353.59 1604.252,2610.445C1693.274,2709.728 1646.186,3237.135 1684.347,3253.489L2234.702,4131.253L3881.601,3090.997C3881.601,3090.997 3608.959,3208.5 3552.895,3212.67C3413.527,3223.035 3282.564,3104.985 3282.564,3104.985C3282.564,3104.985 3064.855,3242.935 2961.102,3234.541C2879.927,3227.973 2767.486,3038.767 2685.433,2932.863C2644.734,2880.335 2489.731,2602.273 2485.77,2593.321C2341.393,2267.041 2304.066,2026.453 2304.066,2026.453L1951.535,2086.442L1861.549,1960.403C1867.838,1884.927 1787.465,1748.804 1761.717,1668.891C1730.755,1572.793 1601.787,1313.24 1619.217,1150.683C1641.193,945.743 1660.11,740.648 1701.922,698.836C1702.066,698.692 1776.657,605.928 1714.28,560.836C1644.445,510.351 1634.133,477.599 1618.504,461.97C1615.729,459.195 1606.373,400.103 1646.31,386.791C1688.33,372.784 1665.36,298.421 1662.146,293.249C1666.252,292.08 1716.244,215.991 1712.22,164.343C1707.487,103.589 1807.885,73.66 1818.295,78.865C1823.601,81.518 1937.373,239.137 1942.907,244.671C1971.911,273.677 2137.549,211.595 2137.549,211.595L2014.541,15.19L1192.13,32.679Z" style="fill:rgb(166,176,162);stroke:black;stroke-width:14.98px;"/>
+                    </g>
+                    
+                    <!-- Highway 26 (upper road) -->
+                    <g class="clickable" data-type="road" data-name="Hwy 26" transform="matrix(0.723793,-1.154381,1.154381,0.723793,-1331.502721,2844.524006)">
+                        <path d="M2092.207,-151.566L4065.899,3028.887L3907.155,3128.419C3879.153,3072.412 3493.096,2437.63 3108.334,1804.651C2642.017,1037.505 1961.406,-69.555 1961.406,-69.555L2092.207,-151.566Z" style="fill:rgb(164,164,164);stroke:black;stroke-width:14.98px;"/>
+                    </g>
+                    
+                    <!-- Highway 26 (lower road) -->
+                    <g class="clickable" data-type="road" data-name="Hwy 26" transform="matrix(0.7206,-1.157354,1.15665,0.720162,-1325.718655,2624.736082)">
+                        <path d="M2126.934,-172.128L4078.257,3021.472L3907.155,3128.419C3879.153,3072.412 3493.096,2437.63 3108.334,1804.651C2642.017,1037.505 1961.406,-69.555 1961.406,-69.555L2126.934,-172.128Z" style="fill:rgb(164,164,164);stroke:black;stroke-width:14.98px;"/>
+                    </g>
+                    
+                    <!-- Cabin 1 -->
+                    <g class="clickable" data-type="building" data-name="Cabin 1" data-status="condemned" transform="matrix(0.326002,0.205504,-0.228543,0.36255,1892.428503,243.723417)">
+                        <path d="M3829.918,586.521L4351.497,603.217C4351.497,603.217 4325.578,1291.808 4327.898,1310.577C4292.089,1314.512 3823.546,1294.375 3823.546,1294.375L3829.918,586.521Z" style="fill:rgb(121,33,32);stroke:black;stroke-width:18.4px;"/>
+                    </g>
+                    
+                    <!-- Gas Station/Shop (visually part of rented lot above, but keeping separate path) -->
+                    <g class="clickable" data-type="property" data-name="Rented Lot & Gas Station/Shop" data-status="old-building" transform="matrix(-0.003666,0.336622,-0.615891,-0.006708,2107.916768,-333.133101)">
+                        <path d="M3829.918,586.521L4351.497,603.217C4351.497,603.217 4325.578,1291.808 4327.898,1310.577C4292.089,1314.512 3823.546,1294.375 3823.546,1294.375L3819.988,894.158L3258.883,875.468L3247.121,578.38L3829.918,586.521Z" style="fill:rgb(192,139,139);stroke:black;stroke-width:15.11px;"/>
+                    </g>
+                    
+                    <!-- Cabin 7 -->
+                    <g class="clickable" data-type="building" data-name="Cabin 7" data-status="condemned" transform="matrix(0.335215,0.020094,-0.024704,0.41212,1821.048427,523.291718)">
+                        <path d="M3829.918,586.521L4351.497,603.217C4351.497,603.217 4325.578,1291.808 4327.898,1310.577C4292.089,1314.512 3823.546,1294.375 3823.546,1294.375L3829.918,586.521Z" style="fill:rgb(121,33,32);stroke:black;stroke-width:19.93px;"/>
+                    </g>
+                    
+                    <!-- Cabin 6 -->
+                    <g class="clickable" data-type="building" data-name="Cabin 6" data-status="occupied" transform="matrix(0.723793,-1.154381,1.154381,0.723793,-1331.502721,2844.524006)">
+                        <path d="M2903.334,2168.036L3087.949,2052.076L3110.15,2087.036L3211.82,2021.11L3279.954,2129.777L3184.53,2189.271L3212.165,2231.921L3026.232,2341.671L2903.334,2168.036Z" style="fill:rgb(156,177,197);stroke:black;stroke-width:5.5px;"/>
+                    </g>
+                    
+                    <!-- Non-fenced Property Line (not clickable) -->
+                    <g transform="matrix(-1.006813,-0.572312,0.691021,0.228935,5246.713081,2330.124934)">
+                        <path d="M2084.222,-481.279L4237.359,2891.696" style="fill:none;stroke:black;stroke-width:61.89px;"/>
+                    </g>
+                    
+                    <!-- North Arrow (not clickable) -->
+                    <g transform="matrix(-1.154337,-0.723863,0.723863,-1.154337,1611.194569,6395.447584)">
+                        <path d="M463.756,3038.257L463.756,2986.184L806.046,2986.184L806.046,2937.831L880.435,3012.22L806.046,3086.61L806.046,3038.257L463.756,3038.257Z" style="fill:rgb(155,157,184);stroke:black;stroke-width:5.5px;"/>
+                    </g>
+                    
+                    <!-- Trees Group -->
+                    <g id="Trees">
+                        <!-- Hazard Trees -->
+                        <g class="clickable" data-type="tree" data-name="Hazard Tree" data-status="hazard" transform="matrix(0.822021,0,0,0.914894,378.533136,182.16679)">
+                            <ellipse cx="4009.502" cy="726.246" rx="126.576" ry="113.444" style="fill:rgb(165,5,0);stroke:black;stroke-width:8.62px;"/>
+                        </g>
+                        
+                        <!-- Healthy Trees -->
+                        <ellipse class="clickable" data-type="tree" data-name="Healthy Tree" data-status="healthy" cx="4551.206" cy="737.51" rx="161.662" ry="152.064" style="fill:rgb(73,123,91);stroke:black;stroke-width:7.5px;"/>
+                        
+                        <g class="clickable" data-type="tree" data-name="Healthy Tree" data-status="healthy" transform="matrix(1,0,0,1,339.527995,-107.812196)">
+                            <ellipse cx="3642.921" cy="826.251" rx="127.252" ry="128.165" style="fill:rgb(73,123,91);stroke:black;stroke-width:7.5px;"/>
+                        </g>
+                        
+                        <g class="clickable" data-type="tree" data-name="Healthy Tree" data-status="healthy" transform="matrix(0.568262,0,0,0.568262,2631.369976,552.752552)">
+                            <ellipse cx="3642.921" cy="826.251" rx="127.252" ry="128.165" style="fill:rgb(73,123,91);stroke:black;stroke-width:13.2px;"/>
+                        </g>
+                        
+                        <!-- Rhododendrons -->
+                        <g class="clickable" data-type="flora" data-name="Rhododendron" data-status="flora" transform="matrix(0.422842,0,0,0.373657,2656.47201,428.774973)">
+                            <ellipse cx="3642.921" cy="826.251" rx="127.252" ry="128.165" style="fill:rgb(206,171,223);stroke:black;stroke-width:18.8px;"/>
+                        </g>
+                        
+                        <g class="clickable" data-type="flora" data-name="Rhododendron" data-status="flora" transform="matrix(0.422842,0,0,0.373657,1921.482703,897.034001)">
+                            <ellipse cx="3642.921" cy="826.251" rx="127.252" ry="128.165" style="fill:rgb(206,171,223);stroke:black;stroke-width:18.8px;"/>
+                        </g>
+                        
+                        <g class="clickable" data-type="flora" data-name="Rhododendron" data-status="flora" transform="matrix(0.422842,0,0,0.373657,3226.296324,358.393251)">
+                            <ellipse cx="3642.921" cy="826.251" rx="127.252" ry="128.165" style="fill:rgb(206,171,223);stroke:black;stroke-width:18.8px;"/>
+                        </g>
+                        
+                        <!-- Diseased Tree -->
+                        <g class="clickable" data-type="tree" data-name="Diseased Ornamental Tree" data-status="hazard" transform="matrix(0.422842,0,0,0.373657,1559.42688,1165.005562)">
+                            <ellipse cx="3642.921" cy="826.251" rx="127.252" ry="128.165" style="fill:rgb(165,5,0);stroke:black;stroke-width:18.8px;"/>
+                        </g>
+                        
+                        <ellipse class="clickable" data-type="tree" data-name="Healthy Tree" data-status="healthy" cx="3711.179" cy="1271.743" rx="140.8" ry="131.145" style="fill:rgb(73,123,91);stroke:black;stroke-width:7.5px;"/>
+                        
+                        <ellipse class="clickable" data-type="tree" data-name="Healthy Tree" data-status="healthy" cx="4073.235" cy="1344.959" rx="108.617" ry="131.949" style="fill:rgb(73,123,91);stroke:black;stroke-width:7.5px;"/>
+                        
+                        <g class="clickable" data-type="tree" data-name="Healthy Tree" data-status="healthy" transform="matrix(0.962963,0,0,0.695122,199.651057,597.622481)">
+                            <ellipse cx="4073.235" cy="1344.959" rx="108.617" ry="131.949" style="fill:rgb(73,123,91);stroke:black;stroke-width:8.93px;"/>
+                        </g>
+                        
+                        <ellipse class="clickable" data-type="tree" data-name="Healthy Tree" data-status="healthy" cx="4009.502" cy="1705.406" rx="126.576" ry="115.858" style="fill:rgb(73,123,91);stroke:black;stroke-width:7.5px;"/>
+                        
+                        <ellipse class="clickable" data-type="tree" data-name="Healthy Tree" data-status="healthy" cx="3576.816" cy="1591.157" rx="115.858" ry="114.249" style="fill:rgb(73,123,91);stroke:black;stroke-width:7.5px;"/>
+                        
+                        <ellipse class="clickable" data-type="tree" data-name="Healthy Tree" data-status="healthy" cx="3098.902" cy="1166.747" rx="120.685" ry="104.996" style="fill:rgb(73,123,91);stroke:black;stroke-width:7.5px;"/>
+                        
+                        <ellipse class="clickable" data-type="tree" data-name="Healthy Tree" data-status="healthy" cx="3161.52" cy="725.096" rx="110.891" ry="105.858" style="fill:rgb(73,123,91);stroke:black;stroke-width:7.5px;"/>
+                    </g>
+                </svg>
+            </div>
+
+            <!-- Popup -->
+            <div id="popup" class="popup">
+                <div class="popup-header">
+                    <div class="popup-title" id="popupTitle">Property Info</div>
+                    <button class="popup-close" onclick="closePopup()">&times;</button>
+                </div>
+                <div class="popup-content" id="popupContent">
+                    <!-- Content will be dynamically inserted -->
+                </div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <h3>Legend</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #9CB1C5;"></div>
+                    <span class="legend-label">Occupied Housing</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #B87B31;"></div>
+                    <span class="legend-label">Partial Occupancy</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #792120;"></div>
+                    <span class="legend-label">Condemned/Empty</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #AA9E9E;"></div>
+                    <span class="legend-label">Rented Lot</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #C08B8B;"></div>
+                    <span class="legend-label">Old Gas Station</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #A6B0A2;"></div>
+                    <span class="legend-label">River Easement</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #497B5B;"></div>
+                    <span class="legend-label">Healthy Trees</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #A50500;"></div>
+                    <span class="legend-label">Hazard Trees</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #CEABDF;"></div>
+                    <span class="legend-label">Rhododendron</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pan and Zoom functionality
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isPanning = false;
+        let startX, startY;
+
+        const svgContainer = document.getElementById('svgContainer');
+        const svg = svgContainer.querySelector('svg');
+        const popup = document.getElementById('popup');
+        const mapWrapper = document.getElementById('mapWrapper');
+
+        // Enable panning
+        svgContainer.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.clickable')) return;
+            isPanning = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            svgContainer.style.cursor = 'grabbing';
+        });
+
+        svgContainer.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        });
+
+        svgContainer.addEventListener('mouseup', () => {
+            isPanning = false;
+            svgContainer.style.cursor = 'grab';
+        });
+
+        svgContainer.addEventListener('mouseleave', () => {
+            isPanning = false;
+            svgContainer.style.cursor = 'grab';
+        });
+
+        // Zoom functionality
+        svgContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            scale *= delta;
+            scale = Math.min(Math.max(0.5, scale), 5);
+            updateTransform();
+        });
+
+        function updateTransform() {
+            svg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
+
+        function resetView() {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+        }
+
+        function zoomIn() {
+            scale *= 1.2;
+            scale = Math.min(scale, 5);
+            updateTransform();
+        }
+
+        function zoomOut() {
+            scale *= 0.8;
+            scale = Math.max(scale, 0.5);
+            updateTransform();
+        }
+
+        // Click handlers for SVG elements
+        document.querySelectorAll('.clickable').forEach(element => {
+            element.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const type = element.dataset.type;
+                const name = element.dataset.name;
+                const status = element.dataset.status;
+                
+                showPopup(e, type, name, status);
+            });
+        });
+
+        function showPopup(e, type, name, status) {
+            const popupTitle = document.getElementById('popupTitle');
+            const popupContent = document.getElementById('popupContent');
+            
+            popupTitle.textContent = name;
+            
+            let content = '';
+            
+            if (type === 'building') {
+                const statusText = getStatusText(status);
+                const statusClass = getStatusClass(status);
+                
+                content = `
+                    <div class="popup-field">
+                        <label>Type:</label>
+                        <span>Building</span>
+                    </div>
+                    <div class="popup-field">
+                        <label>Status:</label>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="popup-field">
+                        <label>Square Footage:</label>
+                        <input type="text" placeholder="Enter square footage..." id="sqft-input">
+                    </div>
+                    <div class="popup-field">
+                        <label>Maintenance Notes:</label>
+                        <input type="text" placeholder="Enter maintenance notes..." id="maintenance-input">
+                    </div>
+                `;
+            } else if (type === 'tree') {
+                const statusText = status === 'healthy' ? 'Healthy Tree' : 'Hazard/Diseased Tree';
+                const statusClass = status === 'healthy' ? 'status-healthy' : 'status-hazard';
+                
+                content = `
+                    <div class="popup-field">
+                        <label>Type:</label>
+                        <span>Tree</span>
+                    </div>
+                    <div class="popup-field">
+                        <label>Status:</label>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="popup-field">
+                        <label>Species:</label>
+                        <input type="text" placeholder="Enter species..." id="species-input">
+                    </div>
+                    <div class="popup-field">
+                        <label>Maintenance Schedule:</label>
+                        <input type="text" placeholder="Enter maintenance schedule..." id="schedule-input">
+                    </div>
+                `;
+            } else if (type === 'flora') {
+                content = `
+                    <div class="popup-field">
+                        <label>Type:</label>
+                        <span>Rhododendron</span>
+                        <span class="status-badge status-flora">Flora</span>
+                    </div>
+                    <div class="popup-field">
+                        <label>Maintenance Notes:</label>
+                        <input type="text" placeholder="Enter maintenance notes..." id="maintenance-input">
+                    </div>
+                `;
+            } else if (type === 'property') {
+                const statusText = getStatusText(status);
+                const statusClass = getStatusClass(status);
+                
+                content = `
+                    <div class="popup-field">
+                        <label>Type:</label>
+                        <span>Property Feature</span>
+                    </div>
+                    <div class="popup-field">
+                        <label>Status:</label>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="popup-field">
+                        <label>Notes:</label>
+                        <input type="text" placeholder="Enter notes..." id="notes-input">
+                    </div>
+                `;
+            } else if (type === 'road') {
+                content = `
+                    <div class="popup-field">
+                        <label>Type:</label>
+                        <span>Highway/Road</span>
+                    </div>
+                    <div class="popup-field">
+                        <label>Name:</label>
+                        <span>${name}</span>
+                    </div>
+                `;
+            }
+            
+            popupContent.innerHTML = content;
+            
+            // Position popup near click
+            const rect = mapWrapper.getBoundingClientRect();
+            let left = e.clientX - rect.left + 20;
+            let top = e.clientY - rect.top + 20;
+            
+            // Keep popup within bounds
+            if (left + 300 > rect.width) {
+                left = e.clientX - rect.left - 320;
+            }
+            if (top + 200 > rect.height) {
+                top = rect.height - 220;
+            }
+            
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+            popup.classList.add('active');
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'occupied': 'Occupied',
+                'partial': 'Partial Occupancy',
+                'condemned': 'Condemned/Empty',
+                'rented': 'Rented Lot',
+                'old-building': 'Old Gas Station/Building',
+                'easement': 'River Easement',
+                'healthy': 'Healthy',
+                'hazard': 'Hazard/Diseased'
+            };
+            return statusMap[status] || status;
+        }
+
+        function getStatusClass(status) {
+            return 'status-' + status;
+        }
+
+        function closePopup() {
+            popup.classList.remove('active');
+        }
+
+        // Close popup when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.popup') && !e.target.closest('.clickable')) {
+                closePopup();
+            }
+        });
+    </script>
+</body>
+</html>
