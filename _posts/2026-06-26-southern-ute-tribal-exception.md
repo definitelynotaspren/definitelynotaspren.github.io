@@ -1,5 +1,4 @@
 ---
-layout: post
 title: "The Tribal Exception: Southern Ute and the FOIA Blind Spot in Colorado"
 date: 2026-06-26
 ---
