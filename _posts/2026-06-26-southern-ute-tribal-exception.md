@@ -1,9 +1,4 @@
----
-title: "The Tribal Exception: Southern Ute and the FOIA Blind Spot in Colorado"
-date: 2026-06-26
----
-
-**Summary Table: Southern Ute Indian Adult Detention Center, Ignacio CO**
+# Summary Table: Southern Ute Indian Adult Detention Center, Ignacio CO
 
 | City/Facility | Type of Activity | Sector(s) Involved | Spread/Scope | Confidence Level | Notes / Red Flags |
 |---|---|---|---|---|---|
